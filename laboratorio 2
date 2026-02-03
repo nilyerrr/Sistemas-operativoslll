@@ -1,0 +1,40 @@
+########################## Practica #1 ################################
+
+Actualizar repositorios
+sudo apt update
+
+Actualizar Sistema operativo
+sudo apt upgrade (-y)
+# -y para auto aceptar la instalación
+
+Ver repositorios actualmente en uso
+ls /etc/apt/sources.list.d/
+
+Buscar Bashtop en la cache de los repositorios
+sudo apt search bashtop
+
+Instalar Bashtop
+sudo apt install bashtop
+
+Desinstalar Bashtop y archivos de configuración
+sudo apt purge bashtop -y  
+
+Eliminar dependencias sin utilizar
+sudo apt autoremove
+
+########################## Practica #2 #########################
+
+Editar tareas en crontab del usuario actual
+crontab -e
+
+Editar tareas de crontab para el usuario root
+sudo crontab -e
+
+Comando para actualizar el sistema a las 11:00PM
+sudo apt update && sudo apt upgrade -y
+
+Comando para reiniciar el sistema todos los domingos a las 3:00AM
+/sbin/shutdown -r now
+
+Comando para borrar todo el contenido de la carpeta /tmp/ un minuto despues de ejecutarlo con AT
+echo "rm -rf /tmp/*" | at now + 1 minute
