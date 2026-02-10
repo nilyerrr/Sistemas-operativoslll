@@ -38,3 +38,29 @@ Comando para reiniciar el sistema todos los domingos a las 3:00AM
 
 Comando para borrar todo el contenido de la carpeta /tmp/ un minuto despues de ejecutarlo con AT
 echo "rm -rf /tmp/*" | at now + 1 minute
+
+
+##################### Practica 3 ##################################
+
+Listar dispositivos de almacenamiento
+sudo fdisk -l
+
+Formatear sistema de archivos en formato ext4
+ls /sbin/mkfs.* (ruta_dispositivo_almacenamiento)
+mkfs.ext4 /dev/sdb
+
+Crear carpeta donde montaremos el disco
+mkdir ~/Desktop/CarpetaParaMontar
+
+Montar el disco en la carpeta
+mount /dev/sdb (ruta de la carpeta)
+mount /dev/sdb ~/Desktop/CarpetaParaMontar
+
+Crear archivo dentro del la carpeta con el disco
+touch ~/Desktop/CarpetaParaMontar/AdrianAlcantara.txt
+
+Desmontar la carpeta (previamente debemos salir de la carpeta)
+umount /dev/sdb
+
+Montar en la carpeta /mnt en la raiz
+mount /dev/sdb /mnt/
