@@ -1,0 +1,122 @@
+#############Practica 1################
+
+sudo nano /etc/default/grub
+GRUB_TIMEOUT=20
+GRUB_TIMEOUT_STYLE=menu
+sudo update-grub
+sudo reboot
+
+presionar e cuando este subiendo el sistema y luego al final de la linea que dice linux poner 
+init=/bin/bash
+
+Quedará algo como:
+linux /boot/vmlinuz-xxxx root=UUID=xxxx ro quiet splash init=/bin/bash
+
+ Presiona Ctrl + X
+
+Remontar el sistema de archivos en modo lectura-escritura:
+mount -o remount,rw /
+
+Cambiar la contraseña de root:
+
+passwd root 
+
+Después de cambiar la contraseña, reinicia el sistema:
+
+exec /sbin/init
+
+o
+
+reboot -f
+
+
+##################Practica 2######################
+
+Crear un script que haga un backup creando un comprimido utilizando TAR de la carpeta /home/(tu_usuario). el nombre del archivo debe de tener la fecha y la hora actual en formato dd-mm-yyyy:hh:mm
+
+nano Script_Backup.sh
+#!/bin/bash
+
+FECHA=$(date +"%d-%m-%Y:%H:%M")
+
+tar -czvf "Backup_$FECHA.tar.gz" "$HOME"
+
+echo "Creando copia de seguridad en $HOME. Nombre del archivo Backup_$FECHA.tar.gz . Creado en $PWD"
+
+#####################################################################
+
+Crear un script que copie el resultado del comando ifconfig en un archivo en el escritorio. El script debe de preguntar cual nombre desea ponerle al archivo y crear el archivo con el nombre provisto
+
+#!/bin/bash
+
+echo "Define un nombre para el output del comando ifconfig"
+read Nombre
+
+echo "Creando el archivo $Nombre.txt para el output del comando ifconfig"
+ifconfig > $HOME/Desktop/$Nombre.txt
+
+
+Aqui instalamos esta herramienta de red, solo si no tenemos disponible el ifconfig
+
+sudo apt install net-tools
+
+ejecutamos el archivo
+
+./ifconfig.sh
+
+cat ifconfig.sh
+
+##########################Practica 3################################
+
+poner maquina virtual en modo bridge 
+
+hacerle ping desde la maquina host a ip de la maquina virtual
+
+Instalar ssh server
+
+sudo apt update
+sudo apt install openssh-server
+
+Habilitar e iniciar el servicio SSH
+sudo systemctl enable ssh
+sudo systemctl start ssh
+
+Verificar el estado:
+sudo systemctl status ssh
+
+Hacemos ping para ver si tenemos conexion
+ping 192.168.100.13
+
+Validar conexión SSH con usuario y contraseña desde tu maquina host (windows)
+ssh ubuntu@192.168.100.13
+
+Generar llaves SSH en Windows (sin passphrase)
+
+Abre PowerShell Genera las llaves:
+ssh-keygen 
+
+Cuando te pregunte la passphrase, simplemente presiona Enter dos veces para dejarla en blanco.
+
+Copiar la clave pública al servidor
+
+crea un archivo key_windows.pub con Bloc de notas y copia su contenido.
+
+Desde Windows, conéctate al Ubuntu por SSH usando usuario/contraseña como antes.
+
+En Ubuntu, ejecuta:
+
+nano ~/.ssh/authorized_keys
+
+Pero si la carpeta no esta en .ssh podemos simplemente crearla con
+touch authorized_keys
+
+Pega el contenido de la clave pública.
+
+Guarda y cierra.
+
+Ajusta permisos:
+
+chmod 600 ~/.ssh/authorized_keys
+
+Probar conexión SSH sin contraseña
+ssh -i (ruta de la clave privada) ubuntu@192.168.100.13
