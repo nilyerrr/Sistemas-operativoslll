@@ -1,0 +1,238 @@
+#############practica 1####################
+actualizamos los repositorios y instalamos apache
+
+sudo apt update
+sudo apt install apache2
+
+
+primera parte
+
+Creamos archivos de virtualhosting para el puerto 80 (Hola Mundo)
+
+cd /etc/apache2
+cd sites-available
+nano holamundo.conf 
+
+agregamos nuestro host virtual
+
+<VirtualHost *:80>
+    ServerAdmin admin@midominio.local
+    ServerName holamundo.local
+    ServerAlias www.holamundo.local
+    DocumentRoot /var/www/holamundo.local
+
+    <Directory /var/www/holamundo.local>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/holamundo_error.log
+    CustomLog ${APACHE_LOG_DIR}/holamundo_access.log combined
+</VirtualHost>
+
+
+actualizamos 
+
+a2ensite holamundo.conf
+systemctl reload apache2
+
+
+Agregamos contenido al virtualhosting web
+
+nano /var/www/holamundo.local/index.html
+
+<html>
+<title>
+Hola Mundo
+</title>
+<body>
+<h1>
+Hola Mundo
+</h1>
+</body>
+</html>
+
+Incluimos hola.local en el /etc/hosts
+
+nano /etc/hosts
+
+Agregamos
+
+127.0.0.1 holamundo.local
+
+Probamos con curl o con nuestro navegador
+
+###############
+segunda parte 
+
+
+configuramos para permitir el puerto 8080
+sudo nano /etc/apache2/ports.conf
+Agregamos
+
+Listen 8080
+
+Guardamos y hacemos restart
+
+systemctl restart apache2
+
+Agregamos archivos virtualhosting para la pagina del puerto 8080
+
+sudo nano /etc/apache2/sites-avaiable/reylinlocal.conf
+
+Escribimos
+
+<VirtualHost *:8080>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/reylinlocal
+    ServerName reylin.local
+    ErrorLog ${APACHE_LOG_DIR}/error8080.log
+    CustomLog ${APACHE_LOG_DIR}/access8080.log combined
+</VirtualHost>
+
+Guardamos y cerramos
+
+Agregamos contenido a la ruta del virtual hosting de Apache
+
+cd /var/www/
+mkdir reylinlocal
+sudo nano /var/www/reylinlocal/index.html
+
+Nombre: Reylin Santana Ortega
+Matricula: 20252253
+Materia: Sitemas operativos 3
+
+Activamos la pagina y reiniciamos apache
+
+sudo a2ensite reylilocal.conf
+sudo systemctl reload apache2
+
+Agregamos el dominio al /etc/hosts para que lo reconozca
+
+nano /etc/hosts
+
+127.0.0.1 reylin.local
+
+Probamos la pagina
+
+
+
+######################Practica 2############################
+
+
+actualizamos y instalamos
+
+sudo apt update
+sudo apt install postfix mailutils libsasl2-modules -y
+
+vamos a la carpeta de configuracion
+
+
+sudo nano /etc/postfix/main.cf
+
+modificamos los ajustes con estos scrip 
+
+# CONFIGURACION BASICA
+myhostname = localhost
+mydomain = localhost
+myorigin = $mydomain
+
+# REDES Y DESTINOS
+inet_interfaces = localhost
+mynetworks = 127.0.0.0/8 [::1]/128
+mydestination = $myhostname, localhost
+
+# RELAY GMAIL
+relayhost = [smtp.gmail.com]:587
+
+# AUTENTICACIÓN GMAIL
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_sasl_mechanism_filter = plain
+
+# SEGURIDAD TLS
+smtp_use_tls = yes
+smtp_tls_security_level = encrypt
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+
+# ALIASES
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+
+
+luego borramos la linea smtp_tls_security_level=may
+
+luego vamos a esta ruta
+
+sudo nano /etc/postfix/sasl_passwd
+
+y escribimos 
+
+[smtp.gmail.com]:587 mas el correo que utlizaremos:aqui ponemos la contraseña de aplicacion 
+
+[smtp.gmail.com]:587 reylinsantana.o@gmail.com:kvaj dvgt dwvo xsuz
+
+luego le damos permiso 
+
+sudo chmod 600 /etc/postfix/sasl_passwd
+sudo postmap /etc/postfix/sasl_passwd
+
+y probamos para enviar el correo 
+
+echo "hola como estas" | mail -s "El asunto" + el correo donde se enviara
+
+#################practica 3####################
+
+
+####################Practica 3#####################
+
+Instalamos CUPS y CUPS-PDF (como root)
+
+apt install CUPS CUPS-PDF -y
+
+Agregamos un usuario al grupo lpadmin (en mi caso el usuario ubuntu)
+
+usermod -aG lpadmin ubuntu
+
+Permitimos las conexiones externas, conexiones externas de administrador y compartimos las impresoras
+
+cupsctl --remote-admin --remote-any --share-printers
+
+Accedemos al web panel
+
+127.0.0.1:631
+
+Nos logeamos como administrador en la pagina (usuario y contraseña del usuario en lpadmin)
+
+Creamos una impresora nueva
+
+Utilizamos la impresora local CUPS-PDF
+
+Permitimos compartirla
+
+Utilizamos el driver generic
+
+Utilizamos el driver CUPS-PDF Generic no-config
+
+Creamos la impresora y probamos con una pagina de prueba (se guarda en el usuario de administrador usado en la ruta (/home/(usuario)/PDF/)
+
+Agregamos impresora en windows
+
+Abrimos configuracion > Bluetooth y Dispositivos > Impresoras y Escaneres > Agregar Dispositivo > (Si no nos sale al principio, vamos a agregar dispositivo manualmente) >
+Introducimos la ruta de la impresora http://(ip):(puerto)/printers/(impresora) http://192.168.100.13:631/printers/Alan-PDF
+
+Seleccionamos el driver generico text only
+
+Terminamos de agregar la impresora y por ultimo seleccionamos un archivo y lo imprimimos.
+
+
+
+
+
+
+
+
+
+
