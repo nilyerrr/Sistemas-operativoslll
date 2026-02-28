@@ -1,0 +1,142 @@
+##############################Practica 1#################################
+
+Sincronizacion de carpetas con RSync
+
+Instalamos RSync
+
+apt install rsync
+
+Creamos la carpeta y accedemos a ella
+
+mkdir RSync
+cd RSync
+
+Creamos los 100 archivos
+
+touch Archivo{001..100}.txt
+
+Ejecutamos el comando de sincronización desde el server1 hacia el server2
+
+usuario_server2= ubuntu
+usuario = ubuntu
+IP_server2= 192.168.100.13
+
+rsync -avz /home/{usuario}/rsync {usuario_server2}@{IP_Server2}:/home/{usuario_server2}/
+
+Validamos en el Server2
+
+Creamos el archivo de sincronización desde el server1 hacia el server2
+
+#!/bin/bash
+
+rsync -avz /home/ubuntu/rsync ubuntu@192.168.100.13:/home/ubuntu/
+
+Nombre del archivo rsync.sh
+
+Permisos de ejecucion
+
+chmod +x rsync.sh
+
+Definimos una Tarea Cron para ejecutar el archivo de sincronización cada minuto
+
+crontab -e
+
+* * * * * /home/ubuntu/rsync.sh
+
+Probamos la sincronizacion
+
+Creamos un nuevo archivo para validar que se sincroniza
+
+touch ArchivoNuevo.txt
+
+Esperamos un minuto y validamos en el servidor2
+
+Finalizada
+
+############################################practica 2##################################################
+
+1. Instalar Heartbeat en ambas VMs
+sudo apt update
+sudo apt install heartbeat -y
+
+
+2. Archivo principal de configuración
+Editar:
+sudo nano /etc/ha.d/ha.cf
+
+logfacility local0          # (Opcional) Registro de logs en syslog
+keepalive 2                 # Intervalo entre latidos (heartbeat en segundos)
+deadtime 15                 # Tiempo para declarar nodo caído (en segundos)
+warntime 5                  # (Opcional) Tiempo para lanzar advertencia de latido retrasado
+initdead 60                 # Tiempo extra de espera al iniciar (útil en reinicios)
+bcast enp0s3                # Método de comunicación: broadcast en la interfaz enp0s3
+node ubuntu-VirtualBox      # Nombre de nodo 1 (como aparece en PC1)
+node server2                # Nombre de nodo 2 (como aparece en PC2)
+auto_failback off           # No auto-retornar IP al nodo primario tras recuperación
+
+3. Archivo de recursos
+sudo nano /etc/ha.d/haresources
+
+Ejemplo:
+ubuntu-VirtualBox IPaddr2::192.168.100.100/24/enp0s3
+
+
+4. Archivo de autenticación
+sudo nano /etc/ha.d/authkeys
+Contenido:
+auth 1
+1 sha1 MiClaveSecretaCompartida
+
+Luego:
+sudo chmod 600 /etc/ha.d/authkeys
+
+5. Iniciar Heartbeat
+En ambas máquinas:
+sudo systemctl start heartbeat
+Verificar:
+sudo systemctl status heartbeat
+
+##################################################Practica 3########################################
+
+PASO 1 — Instalar Apache en ambas VMs
+En server1 y server2:
+sudo apt update
+sudo apt install apache2 -y
+
+PASO 2 — Crear página diferente en cada servidor
+En server1:
+sudo nano /var/www/html/index.html
+Contenido:
+<h1>Servidor Web 1</h1>
+<p>Cluster funcionando correctamente</p>
+
+
+PASO 3 — Instalar Keepalived en ambas VMs
+sudo apt install keepalived -y
+
+
+PASO 4 — Configuración en Server 1 (MASTER)
+Editar:
+sudo nano /etc/keepalived/keepalived.conf
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface enp0s3
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1234
+    }
+    virtual_ipaddress {
+        192.168.100.200
+    }
+}
+
+PASO 6 — Iniciar Keepalived
+En ambas máquinas:
+sudo systemctl restart keepalived
+sudo systemctl status keepalived
+
+
