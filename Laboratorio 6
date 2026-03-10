@@ -1,0 +1,305 @@
+#######################Practica #1#######################
+
+Cifrado con GPG
+
+Instalamos GPG2
+
+sudo apt install gnupg2
+
+Generamos las claves
+
+gpg2 --full-generate-key
+
+Creamos un directorio, y dentro de este un archivo
+
+mkdir ~/Desktop/Prueba
+echo "Texto para probar el cifrado GPG2" > ~/Desktop/Prueba/Archivo1.txt
+
+Ciframos el archivo
+
+gpg2 -e -r "ID" ~/Desktop/Prueba/Archivo1.txt
+
+Intentamos acceder al archivo
+
+cat ~/Desktop/Prueba/Archivo1.txt.gpg
+
+Desciframos el archivo
+
+gpg2 -d ~/Desktop/Prueba/Archivo1.txt.gpg > Archivo2.txt
+
+Verificamos la integridad del archivo
+
+cat Archivo2.txt
+
+#########################################################
+
+#######################Practica #2#######################
+
+Verificamos los servicios desde un cliente Externo
+
+Bloqueamos trafico entrante hacia puertos 21, 22 y 80 con IPTables
+
+sudo iptables -A INPUT -p tcp --dport 21 -j DROP
+sudo iptables -A INPUT -p tcp --dport 22 -j DROP
+sudo iptables -A INPUT -p tcp --dport 80 -j DROP
+
+Probamos el acceso desde un cliente externo
+
+Liberamos las reglas
+
+sudo iptables -D INPUT -p tcp --dport 21 -j DROP
+sudo iptables -D INPUT -p tcp --dport 22 -j DROP
+sudo iptables -D INPUT -p tcp --dport 80 -j DROP
+
+Probamos acceso desde cliente externo
+
+Bloqueamos el trafico entrante hacia puertos 21, 22 y 80 con UFW (Debian Based)
+
+ufw deny 21
+ufw deny 22
+ufw deny 80
+
+Probamos acceso desde cliente externo
+
+Liberamos reglas 
+
+ufw delete deny 21
+ufw delete deny 22
+ufw delete deny 80
+
+#########################################################
+
+#######################Practica #3#######################
+
+practica 3 
+
+1. Instalación de Snort en Ubuntu
+
+
+# Actualizar e instalar dependencias
+sudo apt update
+sudo apt install -y snort libpcap-dev
+
+# Verificar versión
+snort -V
+
+2. Configuración Básica de Snort
+
+
+# Editar configuración principal
+sudo nano /etc/snort/snort.conf
+
+# Modificar estas líneas:
+var HOME_NET [IP_de_tu_VM]/24   192.168.100.14/24 (Con fines del laboratorio, colocamos any)
+var EXTERNAL_NET any
+ipvar DNS_SERVERS $HOME_NET
+
+3. Creación de Reglas de Detección
+
+
+# Crear archivo de reglas locales
+sudo nano /etc/snort/rules/local.rules
+
+Agregar las siguientes reglas:
+
+
+# Detección de ICMP (Ping)
+alert icmp any any -> $HOME_NET any (msg:"ICMP Ping Detectado"; sid:1000001; rev:1;)
+
+# Detección de tráfico FTP (puerto 21)
+alert tcp any any -> $HOME_NET 21 (msg:"Tráfico FTP Detectado"; sid:1000002; rev:1;)
+
+# Detección de tráfico SSH (puerto 22)
+alert tcp any any -> $HOME_NET 22 (msg:"Tráfico SSH Detectado"; sid:1000003; rev:1;)
+
+# Detección de tráfico HTTP (puerto 80)
+alert tcp any any -> $HOME_NET 80 (msg:"Tráfico HTTP Detectado"; sid:1000004; rev:1;)
+
+4. Ejecución de Snort en Modo IDS
+
+
+# Verificar configuración
+sudo snort -T -c /etc/snort/snort.conf
+
+# Ejecutar en modo IDS 
+sudo snort -A console -q -c /etc/snort/snort.conf -i enp0s3 -l /var/log/snort/
+
+5. Pruebas desde Windows 11
+Prueba 1: Detección de Ping (ICMP)
+
+
+# En Windows (PowerShell o CMD):
+ping [IP_de_VM]
+
+Salida esperada en Snort:
+
+
+[**] [1:1000001:1] ICMP Ping Detectado [**]
+[Priority: 0] 
+{ICMP} 192.168.1.50 -> 192.168.1.100
+
+Prueba 2: Detección de FTP (Puerto 21)
+
+
+# Usar telnet para probar conexión FTP
+telnet [IP_de_VM] 21
+
+Salida esperada en Snort:
+
+
+[**] [1:1000002:1] Tráfico FTP Detectado [**]
+[Priority: 0] 
+{TCP} 192.168.1.50:51234 -> 192.168.1.100:21
+
+Prueba 3: Detección de SSH (Puerto 22)
+
+
+# Usar telnet para probar conexión SSH
+telnet [IP_de_VM] 22
+
+Salida esperada en Snort:
+
+
+[**] [1:1000003:1] Tráfico SSH Detectado [**]
+[Priority: 0] 
+{TCP} 192.168.1.50:51235 -> 192.168.1.100:22
+
+Prueba 4: Detección de HTTP (Puerto 80)
+
+
+# Usar curl o navegador web
+curl http://[IP_de_VM]
+
+Salida esperada en Snort:
+
+
+[**] [1:1000004:1] Tráfico HTTP Detectado [**]
+[Priority: 0] 
+{TCP} 192.168.1.50:51236 -> 192.168.1.100:80
+
+6. Visualización de Alertas
+
+
+# Ver alertas en tiempo real (en otra terminal)
+sudo tail -f /var/log/snort/alert
+
+7. Detener Snort
+
+
+# Para detener Snort
+sudo pkill snort
+
+Resumen de Configuración
+Protocolo	Puerto	Regla Snort	Prueba Windows
+ICMP	-	alert icmp any any -> $HOME_NET any	ping [IP]
+FTP	21	alert tcp any any -> $HOME_NET 21	telnet [IP] 21
+SSH	22	alert tcp any any -> $HOME_NET 22	telnet [IP] 22
+HTTP	80	alert tcp any any -> $HOME_NET 80	curl http://[IP]
+
+Consejos:
+
+    Asegúrate que los servicios (FTP/SSH/HTTP) están corriendo en Ubuntu
+
+    Verifica que no hay reglas de firewall bloqueando el tráfico
+
+    Para pruebas más reales, puedes usar Nmap desde Windows:
+
+nmap -p 21,22,80 [IP_de_VM]
+
+#########################################################
+
+#######################Practica #4#######################
+
+1. Instalación de Google Authenticator en Ubuntu
+
+sudo apt update
+sudo apt install libpam-google-authenticator -y
+
+2. Configuración para el Usuario
+
+    Ejecutar el asistente de configuración (como usuario normal, NO root):
+
+    google-authenticator
+
+    Seguir las instrucciones interactivas:
+
+        ¿Generar tokens basados en tiempo? (Sí)
+
+        Guardar el código de emergencia (en un lugar seguro)
+
+        ¿Actualizar el archivo ~/.google_authenticator? (Sí)
+
+        ¿Permitir múltiples usos del mismo código? (No, por seguridad)
+
+        ¿Limitar ventana de verificación? (Sí)
+
+        ¿Habilitar protección contra fuerza bruta? (Sí)
+
+    Configurar el código QR en Google Authenticator (app móvil):
+
+        Escanear el QR mostrado en terminal.
+
+        O ingresar manualmente la clave secreta.
+
+3. Configurar PAM para usar Google Authenticator
+
+    Editar el archivo PAM para SSH:
+
+sudo nano /etc/pam.d/sshd
+
+Agregar al inicio del archivo:
+
+auth required pam_google_authenticator.so
+
+Comentar (si existe) la línea:
+
+    @include common-auth
+
+    (para evitar doble solicitud de contraseña).
+
+4. Configurar SSH para usar 2FA
+
+    Editar la configuración de SSH:
+
+sudo nano /etc/ssh/sshd_config
+
+Asegurar estas líneas estén así:
+
+ChallengeResponseAuthentication yes
+UsePAM yes
+PasswordAuthentication yes  # (Si usas contraseña + 2FA)
+
+Reiniciar SSH:
+
+    sudo systemctl restart sshd
+
+5. Probamos desde un cliente externo
+
+ssh usuario@[IP_de_tu_VM]
+
+    Secuencia de autenticación:
+
+        Ingresar contraseña.
+
+        Ingresar código de 6 dígitos (app móvil).
+
+
+6. Desactivar 2FA (Opcional)
+
+    Eliminar el archivo de configuración:
+
+rm ~/.google_authenticator
+
+Revertir cambios en PAM:
+
+sudo nano /etc/pam.d/sshd
+
+    Eliminar pam_google_authenticator.so.
+
+    Descomentar @include common-auth.
+
+Reiniciar SSH:
+
+sudo systemctl restart sshd
+
+#########################################################
