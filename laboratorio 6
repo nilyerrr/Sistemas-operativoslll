@@ -1,0 +1,305 @@
+############Practica 1####################
+
+
+# --- Servidor NFS (192.168.100.14) ---
+sudo apt update && sudo apt install -y nfs-kernel-server
+
+# Crear carpeta compartida y dar permisos
+sudo mkdir -p /srv/nfs/OS3
+sudo chown nobody:nogroup /srv/nfs/OS3
+sudo chmod 755 /srv/nfs/OS3
+
+
+# Crear 100 archivos de prueba
+
+
+ cd /srv/nfs/OS3
+touch Adrian{1..100}.txt
+ 
+
+# Configurar export para el cliente específico (192.168.100.13)
+
+sudo nano /etc/exports
+
+/srv/nfs/OS3 192.168.100.13(rw,sync,no_subtree_check)
+
+# Exportar y reiniciar NFS
+sudo exportfs -ra
+sudo systemctl restart nfs-kernel-server
+
+
+# --- Cliente NFS (192.168.100.13) ---
+
+sudo apt update && sudo apt install -y nfs-common
+
+# Crear punto de montaje y montar
+sudo mkdir -p /mnt/OS3
+sudo mount 192.168.100.14:/srv/nfs/OS3 /mnt/OS3
+
+# Hacer el montaje persistente en /etc/fstab
+
+sudo nano /etc/fstab
+
+192.168.100.14:/srv/nfs/OS3 /mnt/OS3 nfs defaults 0 0
+
+# Probar desmontando y montando de nuevo
+sudo umount /mnt/OS3
+sudo mount -a
+
+# --- Verificación ---
+ls -1 /mnt/OS3
+
+# Reiniciar para comprobar que monta automáticamente
+sudo reboot
+ls -1 /mnt/OS3
+
+
+
+
+
+###### PRACTICA #2 ######
+
+Instalar Samba
+
+apt install samba smbclient
+
+#Crear carpeta para compartir
+
+sudo mkdir -p /srv/samba/compartida
+
+cd /srv/samba/compartida
+
+touch Adrian{1..100}.txt
+
+sudo chmod 777 /srv/samba/compartida
+
+
+Configuramos usuarios y grupos
+
+useradd sambauser
+groupadd sambagroup
+
+
+Ahora lo agregamos a Samba:
+
+sudo smbpasswd -a sambauser
+
+
+
+Asignar propietario al usuario que usaremos:
+
+chown sambauser:sambagroup /srv/samba/compartida
+
+
+
+editar archivo de configuracion de smb y agregamos estas lineas
+
+sudo nano /etc/samba/smb.conf
+
+[Compartida]
+   path = /srv/samba/compartida
+   browseable = yes
+   writable = yes
+   read only = no
+   valid users = sambauser
+
+Reiniciamos el servicio
+
+systemctl restart smbd
+systemctl restart smb
+systemctl restart samba
+
+Accedemos desde smbclient
+
+smbclient -L //IP_del_server -U sambauser
+
+Proporcionamos la contraseña y listo
+
+
+sudo ufw allow samba
+
+Acceso desde el PC.
+
+Administrador de archivos > Este equipo > Agregar volumen en linea > Colocamos la direccion y el recurso compartido > Proporcionamos credenciales > Terminado.
+
+
+
+
+
+###############Practica 3#################
+
+# ===========================================
+# 1) CONFIGURACIÓN DEL SERVIDOR UBUNTU PARA SAMBA AD DC
+# ===========================================
+
+#INVESTIGAR SI HAY UNA IP EN USO, SAMBA SE VUELVE LOCO
+grep -R "192.168.100.14" /etc
+
+
+#Parar Keepalived
+sudo systemctl stop keepalived
+
+# Cambiar el nombre del host a "dc"
+sudo hostnamectl set-hostname dc
+
+# Editar /etc/hosts para agregar la IP, el FQDN y el hostname
+sudo nano /etc/hosts
+# EJEMPLO DE CONTENIDO:
+# 127.0.0.1    localhost
+# 192.168.100.14 dc.so3.inet dc
+
+# Verificar que el nombre de dominio completo (FQDN) responde
+hostname -f
+ping -c2 dc.so3.inet
+
+# Desactivar systemd-resolved para liberar el puerto 53
+sudo systemctl disable --now systemd-resolved
+sudo unlink /etc/resolv.conf
+
+# Crear manualmente el resolv.conf para indicar DNS del propio servidor y externo
+sudo nano /etc/resolv.conf
+# CONTENIDO:
+# nameserver 192.168.100.14
+# nameserver 8.8.8.8
+# search so3.inet
+
+# Proteger resolv.conf para que no sea modificado
+sudo chattr +i /etc/resolv.conf
+
+
+# ===========================================
+# 2) INSTALAR SAMBA, KERBEROS Y DEPENDENCIAS
+# ===========================================
+sudo apt update
+sudo apt install -y acl attr samba samba-dsdb-modules samba-vfs-modules smbclient winbind libpam-winbind libnss-winbind libpam-krb5 krb5-config krb5-user dnsutils chrony net-tools
+
+#EN PANTALLA MORADA DE KERBEROS
+Poner so3.inet
+
+# Deshabilitar servicios de Samba que no se usan en AD DC
+sudo systemctl disable --now smbd nmbd winbind
+
+# Habilitar solo el servicio de AD DC
+sudo systemctl unmask samba-ad-dc
+sudo systemctl enable --now samba-ad-dc
+
+
+# ===========================================
+# 3) PROVISIONAR SAMBA COMO CONTROLADOR DE DOMINIO
+# ===========================================
+
+# Hacer copia de seguridad del smb.conf original
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.orig
+
+# Iniciar la provisión del dominio AD DC
+sudo samba-tool domain provision \
+--realm=SO3.INET \
+--domain=SO3 \
+--server-role=dc \
+--dns-backend=SAMBA_INTERNAL \
+--dns-forwarder=8.8.8.8 \
+--adminpass='Reylin123*'
+
+# Sustituir el archivo de configuración de Kerberos con el generado por Samba
+sudo mv /etc/krb5.conf /etc/krb5.conf.orig
+sudo cp /var/lib/samba/private/krb5.conf /etc/krb5.conf
+
+# Reiniciar Samba AD DC
+sudo systemctl restart samba-ad-dc
+sudo systemctl status samba-ad-dc
+
+
+# ===========================================
+# 4) CONFIGURAR NTP (CHRONY) PARA SINCRONIZACIÓN HORARIA
+# ===========================================
+sudo chown root:_chrony /var/lib/samba/ntp_signd/
+sudo chmod 750 /var/lib/samba/ntp_signd/
+
+# Editar configuración de chrony para permitir a la red acceder al servicio NTP
+sudo nano /etc/chrony/chrony.conf
+# AGREGAR AL FINAL:
+# # Samba AD-DC NTP
+# bindcmdaddress 192.168.100.14
+# allow        192.168.100.0/24
+# ntpsigndsocket /var/lib/samba/ntp_signd
+
+sudo systemctl restart chronyd
+sudo systemctl status chronyd
+
+
+# ===========================================
+# 5) VERIFICACIONES DE SERVICIOS Y DNS
+# ===========================================
+# Comprobar resolución DNS interna
+host -t A dc.so3.inet
+host -t A so3.inet
+host -t SRV _kerberos._udp.so3.inet
+host -t SRV _ldap._tcp.so3.inet
+
+# Ver lista de recursos compartidos de Samba
+smbclient -L so3.inet -N
+
+# Autenticarse en Kerberos con el usuario administrador del dominio
+kinit administrator@SO3.INET
+# Ver ticket Kerberos
+klist
+
+# Probar acceso a la carpeta netlogon
+sudo smbclient //localhost/netlogon -U 'administrator'
+
+# Cambiar la contraseña del administrador (opcional)
+sudo samba-tool user setpassword administrator
+
+# Verificar parámetros de Samba
+testparm
+sudo samba-tool domain level show
+
+
+# ===========================================
+# 6) CREAR USUARIO DE PRUEBA EN EL DOMINIO
+# ===========================================
+sudo samba-tool user create lanegracubana Reylin20252253 --login-shell=/bin/bash
+
+# Listar usuarios y grupos del dominio
+sudo samba-tool user list
+sudo samba-tool group lists
+samba-tool group listmembers 'Domain Admins'
+
+# Añadir o quitar usuarios de un grupo
+sudo samba-tool group addmembers <grupo> <usuario>
+sudo samba-tool group removemembers <grupo> <usuario>
+
+# Listar y eliminar equipos unidos al dominio
+sudo samba-tool computer list
+sudo samba-tool computer delete <equipo>
+
+
+
+
+Configurar Windows
+
+En la máquina Windows 10
+
+Abrir configuración de red
+
+Cambiar el DNS y poner:
+
+192.168.100.14
+
+
+Presiona Win + R
+ Escribe:
+
+ncpa.cpl
+
+
+
+Unir Windows al dominio
+
+Presiona:
+
+Win + R
+
+Escribe:
+
+sysdm.cpl
