@@ -1,0 +1,132 @@
+####### Practica #1 #######
+
+Instalacion de Docker
+
+Instalamos Docker
+
+apt install docker.io
+
+Instalamos imagen NGINX
+
+docker pull nginx:latest
+
+creamos pagina web con nuestro nombre y matricula
+
+mkdir /home/website
+echo "<h1>Reylin Santana Ortega - 2025-2253 </h1>" > /home/website/index.html
+
+Creamos el contenedor con la configuracion adecuada para que se muestre la pagina web en el puerto 8888.
+
+docker run -d -p 8888:80 -v /home/website:/usr/share/nginx/html nginx
+
+Docker creado. hacemos un curl a la ip y puerto correspondiente para verificar el resultado y finalizamos la practica.
+
+###########################
+
+####### Practica #2 #######
+
+Instalacion de Portainer
+
+Utilizamos los oneliners de la pagina oficial de portainer 
+
+docker volume create portainer_data
+
+docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:lts
+
+Ingresamos por navegador a la pagina de administracion (localhost:9443)
+
+Establecemos contraseña para el usuario administrador
+
+Vamos a Enviroments y podemos usar el local, o crear uno nuevo, en caso de, seguimos los pasos de la pagina.
+
+Seleccionamos el Enviroment adecuado, donde veremos los contenedores en ejecucion y podremos ser capaces de detener el contenedor creado anteriormente con un simple click a stop y
+con esto, finalizamos la practica.
+
+###########################
+
+####### Practica #3 #######
+
+Instalar Docker-Compose y desplegar un wordpress con el
+
+Instalamos dependencias
+
+apt install python3 python3-pip
+
+en caso de problemas con el managed enviroment, hacer
+
+sudo mv /usr/lib/python3.11/EXTERNALLY-MANAGED /usr/lib/python3.11/EXTERNALLY-MANAGED.old
+
+Instalamos Docker-Compose
+
+apt install docker-compose -y
+
+comprobamos su funcionamiento
+
+docker-compose -v
+
+creamos un directorio wordpress
+
+mkdir /home/wordpress
+
+creamos un archivo de texto docker-compose.yml
+
+nano /home/wordpress/docker-compose.yml
+
+introducimos el siguiente contenido:
+
+version: "3" 
+services:
+  db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: MySQLRootPassword
+      MYSQL_DATABASE: MySQLDatabaseName
+      MYSQL_USER: MySQLUsername
+      MYSQL_PASSWORD: MySQLUserPassword
+
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: MySQLUsername
+      WORDPRESS_DB_PASSWORD: MySQLUserPassword
+      WORDPRESS_DB_NAME: MySQLDatabaseName
+    volumes:
+      - "./:/var/www/html"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: MySQLUsername
+      PMA_PASSWORD: MySQLUserPassword
+
+volumes:
+  mysql: {}
+
+guardamos y cerramos
+
+entramos al directorio wordpress
+
+cd wordpress
+
+ejecutamos el comando para iniciar la instalacion
+
+docker-compose up -d
+
+esperamos y seguimos el proceso en web (localhost:80)
+
+establecemos idioma, luego usuario, contraseña, correo (no validado) y confirmamos todo.
+
+ya con esto, finalizamos la practica.
+
+###########################
