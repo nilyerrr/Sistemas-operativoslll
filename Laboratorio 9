@@ -1,0 +1,396 @@
+####### Webmin #######
+
+Instalamos el setup
+
+curl -o webmin-setup-repo.sh https://raw.githubusercontent.com/webmin/webmin/master/webmin-setup-repo.sh
+sudo sh webmin-setup-repo.sh
+
+Instalamos Webmin
+
+sudo apt-get install webmin --install-recommends
+
+Acceso por web
+
+127.0.0.1:10000
+
+(usuarios y contraseñas del usuario regular)
+
+
+(Administración de usuarios: Crear, y eliminar una cuenta de usuario.
+
+System > Users and Groups > Create New User
+
+Gestión de servicios: Iniciar, detener y reiniciar servicio del sistema (Ej SSH). 
+
+System > Bootup and Shutdown
+
+Configuración de red: Configurar una IP estatica en interfaces de red.
+
+Networking > Network Configuration > Network Interfaces 
+
+Administración de software: actualizar  Instalar,y eliminar Alguna herramienta.
+
+System > Software Packages
+
+Gestión de archivos y directorios: Explorar, editar un archivo y eliminarlo. 
+
+Tools > File Manager
+
+Monitorización del sistema: Supervisar el rendimiento del sistema,(Memoria, Procesador Armacenamiento).
+
+Dashboard
+
+
+######################
+
+
+
+#############Terraform##############
+
+Pasos para instalar terraform
+
+
+sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl
+
+
+Instalar
+
+Descargar y agregar la clave GPG de HashiCorp:
+
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+sudo apt update && sudo apt install terraform -y
+
+
+Generar la llave SSH (tipo RSA de 4096 bits y sin contraseña):
+
+ssh-keygen -t rsa -b 4096 -N ""
+  (copiamos y pegamos en D O)
+
+
+
+mkdair ~/terraform-do
+
+
+nano main.tf 
+terraform {
+  required_providers {
+    digitalocean = {
+      source  = "digitalocean/digitalocean"
+      version = "~> 2.0"
+    }
+  }
+}
+
+provider "digitalocean" {
+  token = var.do_token
+}
+
+resource "digitalocean_droplet" "os3vm" {
+  image    = "ubuntu-22-04-x64"
+  name     = "OS3vm"
+  region   = "nyc1"
+  size     = "s-1vcpu-1gb"
+  ssh_keys = [var.ssh_fingerprint]
+}
+
+output "ip_address" {
+  value       = digitalocean_droplet.os3vm.ipv4_address
+  description = "IP pública de la VM"
+}
+
+
+
+crear variables
+
+nano variables.tf 
+variable "do_token" {
+  description = "DigitalOcean API Token"
+  type        = string
+  sensitive   = true
+}
+
+variable "ssh_fingerprint" {
+  description = "SSH Key Fingerprint"
+  type        = string
+}
+
+
+
+
+nano terraform.tfvars
+
+do_token        = ""
+ssh_fingerprint = ""
+
+
+
+
+terraform init (para descargar los plugins).
+
+terraform plan (para ver qué se va a crear).
+
+terraform apply (para desplegar la VM).
+
+
+
+####### INSTALACION Y CONFIGURACION DE ANSIBLE #######
+
+############################
+# WINDOWS ANSIBLE CLIENT   #
+############################
+
+net user ansible reylin061019 /add
+net localgroup Administrators ansible /add
+Get-NetConnectionProfile
+Set-NetConnectionProfile -InterfaceAlias "Ethernet0" -NetworkCategory Private
+Enable-PSRemoting -Force
+winrm quickconfig
+winrm set winrm/config/service/auth '@{Basic="true"}'
+winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+netsh advfirewall firewall add rule name="WinRM HTTP" dir=in action=allow protocol=TCP localport=5985
+
+############################
+# LINUX ANSIBLE CLIENT     #
+############################
+
+sudo adduser ansible
+sudo usermod -aG sudo ansible
+
+############################
+# LINUX ANSIBLE SERVER     #
+############################
+
+# Generar clave SSH
+ssh-keygen -t rsa -b 4096
+
+# En cliente ansible 
+
+mkdir -p /home/ansible/.ssh
+nano /home/ansible/.ssh/authorized_keys
+
+(pega la misma clave)
+
+chown -R ansible:ansible /home/ansible/.ssh
+chmod 700 /home/ansible/.ssh
+chmod 600 /home/ansible/.ssh/authorized_keys
+
+
+
+# Copiar clave al cliente Linux
+ssh-copy-id ansible@<IP_VM_LINUX>
+
+# Instalar Ansible
+sudo apt update
+sudo apt install ansible -y
+
+############################
+# INVENTARIO ANSIBLE       #
+############################
+
+sudo mkdir -p /etc/ansible
+sudo nano /etc/ansible/hosts
+
+# CONTENIDO DEL ARCHIVO:
+
+[linux]
+mi-vm-linux ansible_host=174.138.43.46 ansible_user=ansible ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[win]
+mi-pc-windows ansible_host=192.168.100.198 ansible_user=ansible ansible_password=reylin061019 ansible_connection=winrm ansible_port=5985 ansible_winrm_scheme=http ansible_winrm_transport=basic
+
+############################
+# PRUEBAS DE CONEXION      #
+############################
+
+# Linux
+ansible linux -m ping
+
+# Windows
+ansible win -m win_ping
+
+
+
+########################
+
+####### Comandos Ad-hoc #######
+
+#Copiar archivos win#
+
+Creamos archivo
+
+echo "Reylin Santana - 2025-2253" > /home/ubuntu/archivo.txt
+
+Mover archivo de Ansible Server a Windows
+
+ansible win -m win_copy -a "src=/home/ubuntu/Desktop/archivo.txt dest=C:/Usuarios/ansible/Desktop"
+
+Copiar archivo de escritorio a Documentos
+
+ansible win -m win_copy -a "src=C:/Users/ansible/Desktop/archivo.txt dest=C:/Users/ansible/Documents/archivo.txt remote_src=true"
+
+#Reiniciar maquina linux#
+
+ansible linux -m reboot -b --ask-become-pass
+
+
+####### Playbooks #######
+
+MAQUINA SERVIDOR 
+
+# Descargar Notepad++
+wget https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.6/npp.8.6.6.portable.x64.zip -O /home/ubuntu/Desktop/npp_portable.zip
+
+nano instalacion_notepad.yml 
+
+
+ansible-playbook  
+
+---
+- name: Instalar Notepad++ portable Windows
+  hosts: win
+  gather_facts: no
+  tasks:
+
+    - name: Crear carpeta en Windows
+      win_file:
+        path: "C:\\Users\\ansible\\Desktop\\Notepad++"
+        state: directory
+
+    - name: Copiar archivo ZIP de Notepad++ a Windows
+      win_copy:
+        src: /home/ubuntu/Desktop/npp_portable.zip
+        dest: "C:\\Users\\ansible\\Desktop\\Notepad++\\npp_portable.zip"
+
+    - name: Descomprimir Notepad++
+      win_unzip:
+        src: "C:\\Users\\ansible\\Desktop\\Notepad++\\npp_portable.zip"
+        dest: "C:\\Users\\ansible\\Desktop\\Notepad++"
+        removes: "C:\\Users\\ansible\\Desktop\\Notepad++\\npp_portable.zip"
+
+    - name: Verificar instalación
+      win_stat:
+        path: "C:\\Users\\ansible\\Desktop\\Notepad++\\notepad++.exe"
+      register: npp_check
+
+    - name: Mostrar resultado
+      debug:
+        msg: "Notepad++ instalado correctamente"
+      when: npp_check.stat.exists
+
+-----------------------------------------------------------------------------------------------
+
+# Ejecucion del Playbook
+ansible-playbook ~/Desktop/instalacion_notepad.yml
+
+
+
+Playbook para instalar NGINX en la VM Linux
+
+nano installnginx.yml
+
+---
+- name: Instalar NGINX en Linux
+  hosts: linux
+  become: yes
+  remote_user: ansible
+  tasks:
+    - name: Actualizar cache de paquetes
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Instalar NGINX
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Iniciar y habilitar NGINX
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Verificar que NGINX esta funcionando
+      ansible.builtin.service_facts:
+
+    - name: Mostrar estado de NGINX
+      debug:
+        msg: "NGINX funcionando correctamente."
+      when: "'nginx.service' in ansible_facts.services and ansible_facts.services['nginx.service'].state == 'running'"
+
+---
+
+Ejecucion del Playbook
+
+ansible-playbook ~/Desktop/installnginx.yml --ask-become-pass
+
+########################
+
+
+
+Opciones extras ansible playbooks
+
+#####En caso de crear usuario#####
+---
+- name: Crear usuario
+  hosts: linux
+  become: yes
+
+  tasks:
+    - name: Agregar usuario
+      user:
+	name: adrian123
+        password: "{{ 'adrian123' | password_hash('sha512') }}"
+        groups: sudo
+        append: yes
+        shell: /bin/bash
+
+    - name: Instalar Bashtop
+      apt:
+	name: bashtop
+        update_cache: yes
+        state: present
+
+###En caso de creacion de usuario en windows###
+---
+- name: Configuracion Windows
+  hosts: Win
+
+  tasks:
+    - name: Crear usuario de prueba
+      ansible.windows.win_user:
+        name: prueba
+        password: "Password123!"
+        state: present
+        groups:
+          - Usuarios
+          - Administradores
+
+    - name: Crear carpeta en Windows
+      win_file:
+        path: C:\Program Files\Notepad++
+        state: directory
+
+    - name: Copiar archivo ZIP de Notepad++ a Windows
+      win_copy:
+        src: /home/alan/Desktop/npp_portable.zip 
+        dest: C:\Program Files\Notepad++\npp_portable.zip
+
+    - name: Descomprimir Notepad++ en Windows
+      win_unzip:
+        src: C:\Program Files\Notepad++\npp_portable.zip
+        dest: C:\Program Files\Notepad++
+        removes: C:\Program Files\Notepad++\npp_portable.zip
+
+    - name: Verificar que Notepad++ fue instalado
+      win_stat:
+        path: C:\Program Files\Notepad++\notepad++.exe
+      register: npp_check
+
+    - name: Mostrar resultado de la verificación
+      debug:
+        msg: "Notepad++ instalado correctamente"
+      when: npp_check.stat.exists
+
+
