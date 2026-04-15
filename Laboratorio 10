@@ -1,0 +1,42 @@
+GUÍA DE INSTALACIÓN: ISSABEL 5 EN ROCKY LINUX 8
+
+
+dnf update -y
+dnf install wget nano epel-release -y
+
+
+
+2. Configuración de Seguridad (SELinux)
+
+setenforce 0
+sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
+
+
+
+3. Configuración del Firewall (Puertos Críticos)
+(esta parte se puede hacer desde digital ocean)
+
+
+4. Descarga del Instalador
+
+cd /usr/src/
+
+wget https://sourceforge.net/projects/issabelpbx/files/Issabel%205/issabel5-netinstall.sh
+chmod +x issabel5-netinstall.sh
+
+
+5. Ejecución de la Instalación
+
+
+./issabel5-netinstall.sh
+
+
+
+Durante la instalación, el sistema solicitará:
+
+Password de MariaDB (MySQL): Crea una contraseña para la base de datos.
+
+Password del Administrador Web: Esta será para entrar al panel de Issabel (usuario: admin).
+
+
+Ya aqui accede desde la web https://tu_direccion_ip
