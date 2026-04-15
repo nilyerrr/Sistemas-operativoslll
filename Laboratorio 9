@@ -333,14 +333,14 @@ Opciones extras ansible playbooks
 
 #####En caso de crear usuario#####
 ---
-- name: Crear usuario
+- name: Practica C - Configuración de VM
   hosts: linux
   become: yes
 
   tasks:
-    - name: Agregar usuario
+    - name: Actualizar repositorios y agregar usuario adrian123
       user:
-	name: adrian123
+        name: adrian123
         password: "{{ 'adrian123' | password_hash('sha512') }}"
         groups: sudo
         append: yes
@@ -348,10 +348,9 @@ Opciones extras ansible playbooks
 
     - name: Instalar Bashtop
       apt:
-	name: bashtop
+        name: bashtop
         update_cache: yes
         state: present
-
 ###En caso de creacion de usuario en windows###
 ---
 - name: Configuracion Windows
