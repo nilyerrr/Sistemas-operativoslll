@@ -15,6 +15,11 @@ creamos pagina web con nuestro nombre y matricula
 mkdir -p /home/website
 echo "<h1>Reylin Santana Ortega - 2025-2253 </h1>" > /home/website/index.html
 
+si da error al hacer echo, hacerlo manual:
+
+nano /home/website/index.html
+
+y ahi pegar el contenido
 
 Creamos el contenedor con la configuracion adecuada para que se muestre la pagina web en el puerto 8888.
 
@@ -25,6 +30,84 @@ docker run -d -p 8888:80 -v /home/website:/usr/share/nginx/html nginx
 docker run -d --name web-ha -p 8888:80 -v /home/website:/usr/share/nginx/html --restart always nginx
 
 Docker creado. hacemos un curl a la ip y puerto correspondiente para verificar el resultado y finalizamos la practica.
+
+------------------------------------------------------------------------
+COMANDOS PARA DOCKER
+
+1. Gestión de Contenedores (Ciclo de Vida)
+
+docker run              Crea y arranca un contenedor (es un create + start).
+
+docker ps               Lista los contenedores activos. (Usa -a para ver todos).
+
+docker stop             [ID]Detiene un contenedor de forma segura.
+
+docker start            [ID]Arranca un contenedor que ya estaba creado pero apagado.
+
+docker restart          [ID]Reinicia el contenedor.
+
+docker rm               [ID]Elimina un contenedor (debe estar apagado o usar -f).
+
+docker exec -it          [ID] bashVital: Entra a la terminal del contenedor.
+
+
+
+2. Manejo de Imágenes
+
+
+docker pull [nombre]: Descarga una imagen desde Docker Hub.
+
+docker images: Lista todas las imágenes que tienes descargadas.
+
+docker rmi [ID]: Borra una imagen de tu disco local.
+
+docker build -t [nombre:tag] .: Crea tu propia imagen usando un archivo Dockerfile.
+
+docker tag [ID] [nombre_nuevo]: Cambia el nombre o etiqueta de una imagen.
+
+
+
+3. Inspección y Logs (Para Auditoría y Debugging)
+
+
+docker logs -f [ID]: Ver lo que está imprimiendo el contenedor en tiempo real.
+
+docker inspect [ID]: Muestra toda la configuración en JSON (IPs, montajes, variables de entorno).
+
+docker stats: Monitor de recursos en tiempo real (CPU, RAM, red).
+
+docker port [ID]: Te dice qué puerto del host está mapeado al contenedor.
+
+
+
+4. Volúmenes y Redes
+
+
+docker volume ls: Lista los volúmenes de persistencia.
+
+docker volume prune: Borra todos los volúmenes que no se estén usando (cuidado aquí).
+
+docker network ls: Lista las redes virtuales (Bridge, Host, None).
+
+docker network inspect [nombre]: Ver qué contenedores están conectados a esa red y sus IPs.
+
+
+
+
+5. Docker Compose (La navaja suiza)
+
+
+docker-compose up -d: Levanta todo lo definido en el .yml en segundo plano.
+
+docker-compose down: Apaga y borra los contenedores y redes del archivo.
+
+docker-compose stop: Solo apaga los contenedores sin borrarlos.
+
+docker-compose ps: Estado de los servicios del proyecto actual.
+
+
+
+
 
 ###########################
 
