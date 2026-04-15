@@ -292,8 +292,6 @@ Presiona Win + R
 
 ncpa.cpl
 
-
-
 Unir Windows al dominio
 
 Presiona:
@@ -303,3 +301,83 @@ Win + R
 Escribe:
 
 sysdm.cpl
+
+
+CONFIGURAR EL FIREWALL
+
+wf.msc
+
+
+--------------------------------------------------------------------------------------------------
+
+Unir la vm de windows a un AC y crear una carpeta compartida.
+
+
+1. Crear la carpeta y asignar permisos básicos
+
+sudo mkdir -p /srv/samba/compartida
+cd /srv/samba/compartida
+# Creamos los archivos como en tu script
+sudo touch Adrian{1..100}.txt
+# Damos permisos totales al sistema de archivos para empezar
+sudo chmod 777 /srv/samba/compartida
+
+2. Configurar las ACLs 
+
+
+# Instalar soporte de ACL si no lo tienes
+sudo apt install acl -y
+
+# Dar permisos de lectura, escritura y ejecución al usuario del dominio
+sudo setfacl -m u:lanegracubana:rwx /srv/samba/compartida
+# (Opcional) Dar permisos a todos los usuarios del dominio
+sudo setfacl -m g:"domain users":rwx /srv/samba/compartida
+
+
+
+3. Modificar el smb.conf del Dominio
+
+sudo nano /etc/samba/smb.conf
+
+[Compartida]
+    path = /srv/samba/compartida
+    read only = no
+    writable = yes
+    guest ok = no
+    browseable = yes
+
+
+sudo systemctl restart samba-ad-dc
+
+
+
+
+5. Conectar desde Windows (Práctica G)
+Ahora ve a tu VM de Windows (donde ya iniciaste sesión con lanegracubana):
+
+Abre el explorador de archivos y haz clic derecho en "Este equipo".
+
+Selecciona "Conectar a unidad de red...".
+
+En "Carpeta", escribe la ruta UNC: \\192.168.100.0\Compartida
+
+Dale a Finalizar.
+
+
+POR SI DA PROBLEMAS
+
+1. Aplicar ACLs (Permisos de Active Directory)
+
+# Dar permisos al usuario sobre la carpeta y archivos existentes
+sudo setfacl -R -m u:lanegracubana:rwx /srv/samba/compartida
+
+# Configurar permisos por defecto (para que los archivos nuevos también funcionen)
+sudo setfacl -R -d -m u:lanegracubana:rwx /srv/samba/compartida
+
+
+2. Verificar el Propietario
+
+sudo chown -R root:"domain users" /srv/samba/compartida
+sudo chmod -R 775 /srv/samba/compartida
+
+sudo systemctl restart samba-ad-dc
