@@ -37,6 +37,10 @@ cat Archivo2.txt
 
 Verificamos los servicios desde un cliente Externo
 
+#Para ver las reglas
+
+sudo iptables -L -n -v
+
 Bloqueamos trafico entrante hacia puertos 21, 22 y 80 con IPTables
 
 sudo iptables -A INPUT -p tcp --dport 21 -j DROP
@@ -123,6 +127,14 @@ sudo snort -T -c /etc/snort/snort.conf
 
 # Ejecutar en modo IDS 
 sudo snort -A console -q -c /etc/snort/snort.conf -i enp0s3 -l /var/log/snort/
+
+
+
+#Antes de empezar si no tienes apache instalado, lo instalas:
+sudo apt install apache2 -y
+#Y el server ftp 
+
+sudo apt install vsftpd -y
 
 5. Pruebas desde Windows 11
 Prueba 1: Detección de Ping (ICMP)
