@@ -70,6 +70,7 @@ ssh-keygen -t rsa -b 4096 -N ""
 
 
 
+
 mkdair ~/terraform-do
 
 
@@ -132,7 +133,6 @@ terraform init (para descargar los plugins).
 terraform plan (para ver qué se va a crear).
 
 terraform apply (para desplegar la VM).
-
 
 -----------------------------------------------------------
 TERRAFORM  CON ROCKY 8
@@ -243,7 +243,40 @@ do_token        = ""
 ssh_fingerprint = ""
 
 
+#### EN DADO CASO DE QUERER USAR OTRA VM Y BUSCAR LA VM EXACTA PARA DIGITAL OCEAN HACER ESO ########
 
+#Herramienta Auxiliar: DigitalOcean CLI (doctl)
+#¿Qué es y para qué sirve?
+
+#doctl es la interfaz de línea de comandos oficial de DigitalOcean. En el contexto de Terraform 
+#(Infraestructura como Código), su función principal es ayudarnos a descubrir el "Slug" exacto 
+#de los recursos. El Slug es el identificador único de la base de datos de DigitalOcean para 
+#sistemas operativos (ej. rockylinux-8-x64) y tamaños de hardware (ej. s-2vcpu-4gb).
+#Si este valor es inexacto en el archivo main.tf, Terraform rechazará el despliegue.
+
+
+1. Instalación (Entorno Ubuntu / Debian)
+
+# Instalar el cliente de línea de comandos de DigitalOcean
+sudo snap install doctl
+
+2. Autenticación de la API
+
+# Inicializar la autenticación
+doctl auth init
+#(El sistema solicitará que se pegue el token generado en el panel de DigitalOcean; los caracteres no se mostrarán por seguridad).
+#Debes poner el token generado por Digital Ocean
+
+3. Ejecución y Filtrado (El uso práctico)
+
+# Ejemplo 1: Buscar el Slug de Rocky Linux
+doctl compute image list --public | grep rocky
+
+# Ejemplo 2: Buscar el Slug de Debian
+doctl compute image list --public | grep debian
+
+# Ejemplo 3: Buscar los identificadores de tamaño de hardware (RAM/CPU)
+doctl compute size list
 
 
 ####### INSTALACION Y CONFIGURACION DE ANSIBLE #######
