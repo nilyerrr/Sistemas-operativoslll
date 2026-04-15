@@ -12,12 +12,17 @@ docker pull nginx:latest
 
 creamos pagina web con nuestro nombre y matricula
 
-mkdir /home/website
+mkdir -p /home/website
 echo "<h1>Reylin Santana Ortega - 2025-2253 </h1>" > /home/website/index.html
+
 
 Creamos el contenedor con la configuracion adecuada para que se muestre la pagina web en el puerto 8888.
 
 docker run -d -p 8888:80 -v /home/website:/usr/share/nginx/html nginx
+
+(no hacer esta parte, es para el keepalive)
+
+docker run -d --name web-ha -p 8888:80 -v /home/website:/usr/share/nginx/html --restart always nginx
 
 Docker creado. hacemos un curl a la ip y puerto correspondiente para verificar el resultado y finalizamos la practica.
 
